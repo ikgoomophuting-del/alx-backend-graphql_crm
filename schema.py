@@ -7,9 +7,9 @@ import re
 from decimal import Decimal
 from datetime import datetime
 
-# ----------------------------
+
 #  Object Types (for GraphQL)
-# ----------------------------
+
 class CustomerType(DjangoObjectType):
     class Meta:
         model = Customer
@@ -28,11 +28,11 @@ class OrderType(DjangoObjectType):
         fields = ("id", "customer", "products", "total_amount", "order_date")
 
 
-# ----------------------------
-#  Mutations
-# ----------------------------
 
-# 1️⃣ Create Customer Mutation
+#  Mutations
+# -------------------
+
+#  Create Customer Mutation
 class CreateCustomer(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
@@ -62,7 +62,7 @@ class CreateCustomer(graphene.Mutation):
         return CreateCustomer(customer=customer, message="Customer created successfully!")
 
 
-# 2️⃣ Bulk Create Customers Mutation
+#  Bulk Create Customers Mutation
 class CustomerInput(graphene.InputObjectType):
     name = graphene.String(required=True)
     email = graphene.String(required=True)
@@ -100,7 +100,7 @@ class BulkCreateCustomers(graphene.Mutation):
         return BulkCreateCustomers(customers=customers, errors=errors)
 
 
-# 3️⃣ Create Product Mutation
+#  Create Product Mutation
 class CreateProduct(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
@@ -126,7 +126,7 @@ class CreateProduct(graphene.Mutation):
         return CreateProduct(product=product)
 
 
-# 4️⃣ Create Order Mutation
+#  Create Order Mutation
 class CreateOrder(graphene.Mutation):
     class Arguments:
         customer_id = graphene.ID(required=True)
@@ -166,17 +166,15 @@ class CreateOrder(graphene.Mutation):
         return CreateOrder(order=order)
 
 
-# ----------------------------
+
 #  Mutation Registration
-# ----------------------------
+# ---------------------------
 class Mutation(graphene.ObjectType):
     create_customer = CreateCustomer.Field()
     bulk_create_customers = BulkCreateCustomers.Field()
     create_product = CreateProduct.Field()
     create_order = CreateOrder.Field()
-
-
-# ----------------------------
+    
 #  Queries
 # ----------------------------
 class Query(graphene.ObjectType):
