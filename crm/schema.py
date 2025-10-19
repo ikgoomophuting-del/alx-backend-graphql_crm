@@ -24,27 +24,41 @@ class OrderType(DjangoObjectType):
         model = Order
 
 
-# -------------------------------
+
 # Mutations
 # -------------------------------
-class CreateCustomer(graphene.Mutation):
-    class Arguments:
-        name = graphene.String(required=True)
-        email = graphene.String(required=True)
-        phone = graphene.String()
+import django_filters
+from graphene_django.filter import DjangoFilterConnectionField
 
-    customer = graphene.Field(CustomerType)
-    message = graphene.String()
+from .filters import CustomerFilter, ProductFilter, OrderFilter
 
-    def mutate(self, info, name, email, phone=None):
-        if Customer.objects.filter(email=email).exists():
-            raise ValidationError("Email already exists")
 
-        customer = Customer(name=name, email=email, phone=phone)
-        customer.full_clean()
-        customer.save()
+class Query(graphene.ObjectType):
+    # Filtered queries with sorting
+    all_customers = DjangoFilterConnectionField(CustomerType, order_by=graphene.String())
+    all_products = DjangoFilterConnectionField(ProductType, order_by=graphene.String())
+    all_orders = DjangoFilterConnectionField(OrderType, order_by=graphene.String())
 
-        return CreateCustomer(customer=customer, message="Customer created successfully.")
+    def resolve_all_customers(self, info, order_by=None, **kwargs):
+        qs = Customer.objects.all()
+        if order_by:
+            qs = qs.order_by(order_by)
+        return qs
+
+    def resolve_all_products(self, info, order_by=None, **kwargs):
+        qs = Product.objects.all()
+        if order_by:
+            qs = qs.order_by(order_by)
+        return qs
+
+    def resolve_all_orders(self, info, order_by=None, **kwargs):
+        qs = Order.objects.select_related("customer").prefetch_related("products")
+        if order_by:
+            qs = qs.order_by(order_by)
+        return qs
+
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
 
 
 class BulkCreateCustomers(graphene.Mutation):
