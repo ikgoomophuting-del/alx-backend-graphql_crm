@@ -6,5 +6,10 @@ def seed_data():
     Product.objects.get_or_create(name="Laptop", price=999.99, stock=5)
     Product.objects.get_or_create(name="Phone", price=499.99, stock=10)
 
-    print("✅ Database seeded successfully!")
+    print("Database seeded successfully!")
+
+python manage.py shell
+>>> from crm.seed_db import seed_data
+>>> seed_data()
+
   
