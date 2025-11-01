@@ -1,31 +1,39 @@
 # crm/cron.py
 from datetime import datetime
-import requests
+from gql.transport.requests import RequestsHTTPTransport
+from gql import gql, Client
 
 def log_crm_heartbeat():
-    """Logs a heartbeat message confirming CRM is alive."""
+    """
+    Logs a timestamped heartbeat message to confirm CRM is alive.
+    Optionally queries the GraphQL 'hello' field to verify endpoint responsiveness.
+    """
     log_file = "/tmp/crm_heartbeat_log.txt"
     timestamp = datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
-    message = f"{timestamp} CRM is alive\n"
+    message = f"{timestamp} CRM is alive"
 
-    # Write (append) to log file
-    with open(log_file, "a") as f:
-        f.write(message)
-
-    # Optional: check GraphQL endpoint (for health check)
+    # Optionally query GraphQL 'hello' field to ensure endpoint is up
     try:
-        response = requests.post(
-            "http://localhost:8000/graphql",
-            json={"query": "{ hello }"},
-            timeout=5
+        transport = RequestsHTTPTransport(
+            url="http://localhost:8000/graphql",
+            verify=False,
+            retries=3,
         )
-        if response.status_code == 200:
-            with open(log_file, "a") as f:
-                f.write(f"{timestamp} GraphQL endpoint responded OK\n")
-        else:
-            with open(log_file, "a") as f:
-                f.write(f"{timestamp} GraphQL check failed with status {response.status_code}\n")
+        client = Client(transport=transport, fetch_schema_from_transport=True)
+
+        query = gql("""
+            query {
+                hello
+            }
+        """)
+
+        response = client.execute(query)
+        hello_message = response.get("hello", "No response from GraphQL.")
+        message += f" | GraphQL says: {hello_message}"
+
     except Exception as e:
-        with open(log_file, "a") as f:
-            f.write(f"{timestamp} GraphQL check failed: {str(e)}\n")
-  
+        message += f" | GraphQL check failed: {e}"
+
+    # Append log message to file (don’t overwrite)
+    with open(log_file, "a") as f:
+        f.write(message + "\n")
