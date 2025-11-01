@@ -3,3 +3,4 @@ graphene-django==3.1.5
 django-filter==24.2
 gql==3.4.1
 requests==2.31.0
+django-crontab
