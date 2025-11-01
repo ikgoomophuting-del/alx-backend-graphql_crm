@@ -25,7 +25,7 @@ python manage.py makemigrations crm
 python manage.py migrate
 python3 manage.py crontab add
 python3 manage.py crontab show
-
+python3 manage.py crontab run crm.cron.log_crm_heartbeat
 
 chmod +x crm/cron_jobs/clean_inactive_customers.sh
 
