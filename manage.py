@@ -24,3 +24,5 @@ if __name__ == '__main__':
 python manage.py makemigrations crm
 python manage.py migrate
 
+chmod +x crm/cron_jobs/clean_inactive_customers.sh
+
