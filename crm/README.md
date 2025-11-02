@@ -69,13 +69,30 @@ Setup Steps:
 
 Setup Commands (Checker Recognized)
 Run these commands in order:
+
+
 pip install -r requirements.txt
+
+
 python manage.py migrate
+
+
 python manage.py crontab add
+
+
 python manage.py crontab show
+
+
 celery -A crm worker -l info
+
+
 celery -A crm beat -l info
 
+
+sudo apt install redis-server
+
+
+cat /tmp/crm_report_log.txt
 
 Log Verification Paths
 TaskLog FileFrequencyClean inactive customers/tmp/customercleanuplog.txtWeekly (Sun 2 AM)CRM Heartbeat`/tmp/crm
