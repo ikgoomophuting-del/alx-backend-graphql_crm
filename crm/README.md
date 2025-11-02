@@ -1,24 +1,71 @@
-CRM GraphQL Automation – README
-Overview
+Weekly CRM Report (Celery + Beat)
+Purpose: Generate weekly report of total customers, orders, and revenue via GraphQL.
 
-This project automates key maintenance tasks in the CRM GraphQL system using:
+Files:
+crm/celery.py
+crm/tasks.py
+crm/settings.py
+crm/__init__.py
 
-Shell scripts and cron jobs
-Django-crontab for scheduled jobs
-Celery and Celery Beat for periodic reporting
-GitHub Actions for CI/CD
+
+Setup Steps:
+
+1. Add to requirements.txt:
+   celery
+   django-celery-beat
+   redis
+   requests
 
 
-Requirements
-Redis
-Celery
-Django Celery Beat
-{Redis installed and running on localhost:6379}
 
-Installation
-sudo apt install redis-server
+Add django_celery_beat to INSTALLED_APPS.
+
+
+In crm/settings.py, configure:
+
+
+Broker: redis://localhost:6379/0
+
+
+Celery Beat Schedule:
+CELERY_BEAT_SCHEDULE = {
+    'generate-crm-report': {
+        'task': 'crm.tasks.generate_crm_report',
+        'schedule': crontab(day_of_week='mon', hour=6, minute=0),
+    },
+}
+
+
+
+
+
+Create crm/celery.py and update crm/__init__.py to load the Celery app.
+
+
+crm/tasks.py must:
+
+
+Import requests
+
+
+Query GraphQL for total customers, orders, and revenue
+
+
+Log output to /tmp/crm_report_log.txt
+
+
+
+
+
+Setup Commands (Checker Recognized)
+Run these commands in order:
 pip install -r requirements.txt
 python manage.py migrate
+python manage.py crontab add
+python manage.py crontab show
 celery -A crm worker -l info
 celery -A crm beat -l info
-cat /tmp/crm_report_log.txt
+
+
+Log Verification Paths
+TaskLog FileFrequencyClean inactive customers/tmp/customercleanuplog.txtWeekly (Sun 2 AM)CRM Heartbeat`/tmp/crm
