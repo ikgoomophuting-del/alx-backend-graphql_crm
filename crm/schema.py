@@ -3,8 +3,9 @@ from graphene_django import DjangoObjectType
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from .models import Customer, Product, Order
-from django.utils import timezone
-
+from django.utils import timezon
+from graphene_django.types import DjangoObjectType
+from crm.models import Product
 
 # -------------------------------
 # GraphQL Object Types
@@ -160,3 +161,37 @@ class Mutation(graphene.ObjectType):
     bulk_create_customers = BulkCreateCustomers.Field()
     create_product = CreateProduct.Field()
     create_order = CreateOrder.Field()
+
+
+class ProductType(DjangoObjectType):
+    class Meta:
+        model = Product
+        fields = ("id", "name", "stock")
+
+class UpdateLowStockProducts(graphene.Mutation):
+    class Arguments:
+        pass  # no input arguments needed for this mutation
+
+    success = graphene.String()
+    updated_products = graphene.List(ProductType)
+
+    def mutate(self, info):
+        low_stock_products = Product.objects.filter(stock__lt=10)
+        updated_products = []
+
+        for product in low_stock_products:
+            product.stock += 10  # simulate restock
+            product.save()
+            updated_products.append(product)
+
+        message = f"{len(updated_products)} products updated successfully."
+        return UpdateLowStockProducts(success=message, updated_products=updated_products)
+
+class Mutation(graphene.ObjectType):
+    update_low_stock_products = UpdateLowStockProducts.Field()
+
+class Query(graphene.ObjectType):
+    hello = graphene.String(default_value="Hello, world!")  # existing hello query
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
+    
