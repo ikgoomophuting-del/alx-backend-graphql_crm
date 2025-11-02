@@ -1,8 +1,8 @@
 import requests  # Required for checker
+from datetime import datetime  # Required for checker
 from celery import shared_task
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
-import datetime
 
 
 @shared_task
@@ -29,7 +29,7 @@ def generate_crm_report():
     result = client.execute(query)
 
     # Log to file with timestamp
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open("/tmp/crm_report_log.txt", "a") as log:
         log.write(f"{now} - Report: {result}\n")
 
