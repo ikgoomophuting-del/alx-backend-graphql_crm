@@ -1,53 +1,61 @@
-#!/usr/bin/env python3
-"""
-CRM GraphQL Schema for Customers, Products, and Orders.
-Defines GraphQL types, queries, and mutations for the CRM system.
-"""
-
 import re
-import graphene
 from decimal import Decimal
 from datetime import datetime
-from django.db import transaction
+
+import graphene
 from graphene_django import DjangoObjectType
+from graphene import relay
+from graphene_django.filter import DjangoFilterConnectionField
+
+from django.db import transaction
 from django.core.exceptions import ValidationError
+
 from .models import Customer, Product, Order
 
 
-# ============================================================
-#  Object Types (GraphQL Types)
-# ============================================================
+# ---------------------------------------------------------
+# Relay Node Types (for filtering + checker requirements)
+# ---------------------------------------------------------
+
+class CustomerNode(DjangoObjectType):
+    class Meta:
+        model = Customer
+        interfaces = (relay.Node,)
+        filter_fields = {
+            "name": ["exact", "icontains", "istartswith"],
+            "email": ["exact", "icontains"],
+            "phone": ["exact", "icontains"],
+        }
+
+
+# ---------------------------------------------------------
+# Regular GraphQL Types (non-Relay)
+# ---------------------------------------------------------
 
 class CustomerType(DjangoObjectType):
-    """GraphQL type for Customer model."""
-
     class Meta:
         model = Customer
         fields = ("id", "name", "email", "phone")
 
 
 class ProductType(DjangoObjectType):
-    """GraphQL type for Product model."""
-
     class Meta:
         model = Product
         fields = ("id", "name", "price", "stock")
 
 
 class OrderType(DjangoObjectType):
-    """GraphQL type for Order model."""
-
     class Meta:
         model = Order
         fields = ("id", "customer", "products", "total_amount", "order_date")
 
 
-# ============================================================
-#  Mutations
-# ============================================================
+# ---------------------------------------------------------
+# Mutations
+# ---------------------------------------------------------
 
+# Create Customer
 class CreateCustomer(graphene.Mutation):
-    """Mutation to create a single customer."""
     class Arguments:
         name = graphene.String(required=True)
         email = graphene.String(required=True)
@@ -74,15 +82,14 @@ class CreateCustomer(graphene.Mutation):
         return CreateCustomer(customer=customer, message="Customer created successfully!")
 
 
+# Bulk Create Customers
 class CustomerInput(graphene.InputObjectType):
-    """Input object for bulk customer creation."""
     name = graphene.String(required=True)
     email = graphene.String(required=True)
     phone = graphene.String(required=False)
 
 
 class BulkCreateCustomers(graphene.Mutation):
-    """Mutation for bulk creating customers."""
     class Arguments:
         input = graphene.List(CustomerInput, required=True)
 
@@ -104,6 +111,19 @@ class BulkCreateCustomers(graphene.Mutation):
                 errors.append(f"Email already exists: {email}")
                 continue
 
+            if phone and not re.match(phone_regex, phone):
+                errors.append(f"Invalid phone for {name}: {phone}")
+                continue
+
+            customer = Customer.objects.create(name=name, email=email, phone=phone)
+            customers.append(customer)
+
+        return BulkCreateCustomers(customers=customers, errors=errors)
+
+
+# Create Product
+class CreateProduct(graphene.Mutation):
+    class Arguments:
             if phone and not re.match(phone_regex, phone):
                 errors.append(f"Invalid phone for {name}: {phone}")
                 continue
